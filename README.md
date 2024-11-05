@@ -1,2 +1,9 @@
-# arc_cache
-Adaptive Replacement Cache is an algorithm with better performance than LRU
+# LFU cache
+---
+## Overview
+Least Frequently Used cache is an algorithm with better performance than LRU
+
+## Installation and usage
+
+## Notes
+
