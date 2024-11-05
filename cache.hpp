@@ -17,7 +17,7 @@ class LFU_cache {
 
   using FrqNodeIt = std::list<FrqNode>::iterator;
   using ValNodeIt = std::list<ValNode>::iterator;
-  using DataAccessFunc = T (*)(const KeyT &);
+  using DataAccessFunc = const T &(*)(const KeyT &);
 
   size_t hits_ = 0;
   size_t size_ = 0;

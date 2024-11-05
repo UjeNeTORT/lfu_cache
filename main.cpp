@@ -9,7 +9,7 @@ int SlowGetPage(int key) {
 }
 
 int main() {
-    auto SlowGetPageLambda = [](const int &key) -> int { return key; };
+    auto SlowGetPageLambda = [](const int &key) -> const int & { return key; };
     caches::LFU_cache<int, int> cache {3};
 
     std::cout << "hits is     " << cache.hits()     << "\n";
