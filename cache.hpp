@@ -1,10 +1,13 @@
+#ifndef CACHE_HPP
+#define CACHE_HPP
+
 #include <iostream>
 #include <unordered_map>
 #include <list>
 
 namespace caches {
 
-const size_t DEFAULT_CAPACITY = 100;
+constexpr size_t DefaultCapacity = 100;
 
 template <typename KeyT, typename T>
 class LFU_cache {
@@ -14,51 +17,27 @@ class LFU_cache {
 
   using FrqNodeIt = std::list<FrqNode>::iterator;
   using ValNodeIt = std::list<ValNode>::iterator;
-  using DataAccessFunc = T (*)(KeyT);
+  using DataAccessFunc = T (*)(const KeyT &);
 
   size_t hits_ = 0;
   size_t size_ = 0;
-  size_t capacity_ = DEFAULT_CAPACITY;
+  size_t capacity_;
 
   std::unordered_map<KeyT, ValNodeIt> map_;
   std::list<FrqNode> frq_nodes_;
 
 public:
-  LFU_cache(size_t capacity = DEFAULT_CAPACITY) :
-                          capacity_(capacity), map_(capacity) {}
-
-  void add(KeyT key, T data) {
-    if (map_.find(key) != map_.end()) {
-      std::cerr << "Value already in cache\n";
-      return;
-    }
-
-    if (size_ == capacity_) this->displace();
-
-    FrqNodeIt first_frq = frq_nodes_.begin();
-
-    if (first_frq == frq_nodes_.end() || first_frq->freq() != 0) {
-      frq_nodes_.emplace(first_frq, FrqNode{});
-      first_frq = frq_nodes_.begin();
-    }
-
-    ValNodeIt val = first_frq->add_val(ValNode{data, key, first_frq});
-
-    map_.emplace(key, val);
-    size_++;
-  }
+  explicit LFU_cache(size_t capacity = DefaultCapacity) :
+    capacity_(std::max(capacity, DefaultCapacity)), map_(capacity) {}
 
   template <DataAccessFunc AccessData>
-  const T &get(KeyT key) {
+  const T &get(const KeyT &key) {
     auto map_it = map_.find(key);
 
-    if (map_it == map_.end()) {
-      std::cerr << "key = " << key << " miss\n";
-      this->add(key, AccessData(key));
-      map_it = map_.find(key);
-    } else {
+    if (map_it == map_.end())
+      map_it = add<AccessData>(key);
+    else
       hits_++;
-    }
 
     ValNodeIt val = inc_freq(map_it->second);
     // inc_freq makes map_it invalid
@@ -67,7 +46,12 @@ public:
     return map_it->second->data();
   }
 
-  size_t freq(KeyT key) const {
+  template <DataAccessFunc AccessData>
+  auto add(const KeyT &key) {
+    return add(key, AccessData(key));
+  }
+
+  size_t freq(const KeyT &key) const {
     auto map_it = map_.find(key);
     if (map_it == map_.end()) return 0;
     return map_it->second->freq();
@@ -97,6 +81,28 @@ public:
     out << "===================================================\n";
   }
 
+protected:
+  auto add(const KeyT &key, const T &data) {
+    auto map_it = map_.find(key);
+    if (map_it != map_.end()) return map_it;
+
+    if (size_ == capacity_) displace();
+
+    FrqNodeIt first_frq = frq_nodes_.begin();
+
+    if (first_frq == frq_nodes_.end() || first_frq->freq() != 0) {
+      frq_nodes_.emplace(first_frq, FrqNode{});
+      first_frq = frq_nodes_.begin();
+    }
+
+    ValNodeIt val = first_frq->add_val(ValNode{data, key, first_frq});
+
+    map_it = map_.emplace(key, val).first;
+    size_++;
+
+    return map_it;
+  }
+
 private:
 
   ValNodeIt inc_freq(ValNodeIt val) {
@@ -112,21 +118,24 @@ private:
     if (frq->vals().size() == 0) frq_nodes_.erase(frq);
 
     // upd map_
-    map_.erase(map_.find(new_val->key()));
+    map_.erase(new_val->key());
     map_.emplace(new_val->key(), new_val);
     return new_val;
   }
 
   void displace() {
-    KeyT displaced_key = frq_nodes_.front().displace();
-    map_.erase(map_.find(displaced_key));
-    size_--;
+    if (size_ == 0) {
+      std::cerr << "Can't displace from empty cache\n";
+      return;
+    }
 
-    std::cerr << "displace key = " << displaced_key << "\n";
+    KeyT displaced_key = frq_nodes_.front().displace();
+    map_.erase(displaced_key);
+    size_--;
   }
 
   class FrqNode {
-    size_t freq_ = 0;
+    size_t freq_;
     std::list<ValNode> val_nodes_;
 
   public:
@@ -137,7 +146,7 @@ private:
       return val_nodes_.insert(val_nodes_.begin(), val);
     }
 
-    //? i dont understand this rvalue ref stuff
+    //? i dont understand this rvalue ref
     ValNodeIt add_val(ValNode &&val) {
       return val_nodes_.insert(val_nodes_.begin(), val);
     }
@@ -148,13 +157,13 @@ private:
 
     KeyT displace() {
       KeyT displaced_key = val_nodes_.back().key();
-      std::cerr << "displacing " << displaced_key << '\n';
       val_nodes_.pop_back();
       return displaced_key;
     }
 
-    const std::list<ValNode> &vals() const { return val_nodes_; }
     size_t freq() const { return freq_; }
+
+    const std::list<ValNode> &vals() const { return val_nodes_; }
   };
 
   class ValNode {
@@ -164,7 +173,7 @@ private:
   public:
     FrqNodeIt frq;
 
-    ValNode(T data, KeyT key, FrqNodeIt frq) :
+    ValNode(const T &data, const KeyT &key, FrqNodeIt frq) :
                        data_(data), key_(key), frq(frq) {}
 
     const T &data()   const { return data_; }
@@ -175,3 +184,5 @@ private:
 };
 
 } // namespace caches
+
+#endif // CACHE_HPP

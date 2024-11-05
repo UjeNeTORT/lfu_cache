@@ -9,19 +9,15 @@ int SlowGetPage(int key) {
 }
 
 int main() {
-    auto SlowGetPageLambda = [](int key){ return key; };
+    auto SlowGetPageLambda = [](const int &key) -> int { return key; };
     caches::LFU_cache<int, int> cache {3};
 
     std::cout << "hits is     " << cache.hits()     << "\n";
     std::cout << "size is     " << cache.size()     << "\n";
     std::cout << "capacity is " << cache.capacity() << "\n";
 
-    //cache.add<SlowGetPage>(1, 1);
-    //cache.add(2, 2);
-    //cache.add(3, 3);
-    //cache.add(4, 4);
-
     std::cout << '\n';
+    cache.dump(std::cout);
     std::cout << "cache.get(1) = " << cache.get<SlowGetPageLambda>(1) << '\n';
     cache.dump(std::cout);
     std::cout << "cache.get(2) = " << cache.get<SlowGetPageLambda>(2) << '\n';
@@ -43,8 +39,6 @@ int main() {
     std::cout << "hits is     " << cache.hits()     << "\n";
     std::cout << "size is     " << cache.size()     << "\n";
     std::cout << "capacity is " << cache.capacity() << "\n";
-
-    // TODO make val node and freq node private
 
     return 0;
 }
