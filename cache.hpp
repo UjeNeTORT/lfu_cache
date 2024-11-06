@@ -2,8 +2,10 @@
 #define CACHE_HPP
 
 #include <iostream>
-#include <unordered_map>
 #include <list>
+#include <map>
+#include <unordered_map>
+#include <queue>
 
 namespace caches {
 
@@ -129,6 +131,7 @@ private:
       return;
     }
 
+    // todo
     KeyT displaced_key = frq_nodes_.front().displace();
     map_.erase(displaced_key);
     size_--;
@@ -181,6 +184,74 @@ private:
     size_t freq()     const { return frq->freq(); }
   };
 
+};
+
+template <typename KeyT, typename T>
+class Belady_cache {
+
+  using DataAccessFunc = T (*)(const KeyT &);
+
+  std::queue<KeyT> query_;
+  std::unordered_map<KeyT, T> map_;
+
+  size_t hits_ = 0;
+  size_t size_ = 0;
+  size_t capacity_;
+
+public:
+  explicit Belady_cache(size_t capacity, std::queue<T> query) :
+    query_(query), capacity_(std::max(capacity, DefaultCapacity)) {}
+
+  template <DataAccessFunc AccessData>
+  const T &get(const KeyT &key) {
+    if (key != query_.front())
+      std::cerr << "Expected and received key mismatch\n";
+
+    query_.pop();
+
+    auto map_it = map_.find(key);
+    if (map_it == map_.end()) map_it = add<AccessData>(key);
+    else hits_++;
+
+    return map_it->second;
+  }
+
+  size_t hits() const { return hits_; }
+  size_t size() const { return size_; }
+  size_t capacity() const { return capacity_; }
+
+private:
+  template <DataAccessFunc AccessData>
+  auto add(const KeyT &key) {
+    auto map_it = map_.find(key);
+    if (map_it != map_.end()) return map_it;
+
+    if (size_ == capacity_) displace();
+
+    map_it = map_.emplace(key, AccessData(key))->first;
+    size_++;
+
+    return map_it;
+  }
+
+  void displace() {
+    std::map<KeyT, int> next_query;
+
+    int i = 0;
+    for (auto it = query_.begin(); it != query_.end(); ++it, i++) {
+      // if elem not in map - skip
+      // as we can displace only existing elems
+      if (map_.find(*it) == map_.end()) continue;
+
+      // add not tracked elem
+      if (next_query.find(*it) != next_query.end()) continue;
+      else next_query.emplace(*it, i);
+    }
+
+    auto displace_key = next_query.front().second;
+    map_.erase(*displace_key);
+    size_--;
+  }
 };
 
 } // namespace caches

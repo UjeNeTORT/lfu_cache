@@ -4,41 +4,33 @@
 
 #include "cache.hpp"
 
-int SlowGetPage(int key) {
-    return key;
-}
-
 int main() {
-    auto SlowGetPageLambda = [](const int &key) -> int { return key; };
-    caches::LFU_cache<int, int> cache {3};
+  auto SlowGetPage = [](const int &key) -> int { return key; };
 
-    std::cout << "hits is     " << cache.hits()     << "\n";
-    std::cout << "size is     " << cache.size()     << "\n";
-    std::cout << "capacity is " << cache.capacity() << "\n";
+  std::cout << "# Enter data in following format:\n"
+            << "  n queries, ... (quries)\n\n";
 
-    std::cout << '\n';
-    cache.dump(std::cout);
-    std::cout << "cache.get(1) = " << cache.get<SlowGetPageLambda>(1) << '\n';
-    cache.dump(std::cout);
-    std::cout << "cache.get(2) = " << cache.get<SlowGetPageLambda>(2) << '\n';
-    cache.dump(std::cout);
-    std::cout << "cache.get(3) = " << cache.get<SlowGetPageLambda>(3) << '\n';
-    cache.dump(std::cout);
-    std::cout << "cache.get(4) = " << cache.get<SlowGetPageLambda>(4) << '\n';
-    cache.dump(std::cout);
-    std::cout << "cache.get(4) = " << cache.get<SlowGetPageLambda>(4) << '\n';
-    cache.dump(std::cout);
-    std::cout << "cache.get(4) = " << cache.get<SlowGetPageLambda>(4) << '\n';
-    cache.dump(std::cout);
-    std::cout << '\n';
-    std::cout << "cache.freq(1) = " << cache.freq(1) << '\n';
-    std::cout << "cache.freq(2) = " << cache.freq(2) << '\n';
-    std::cout << "cache.freq(3) = " << cache.freq(3) << '\n';
-    std::cout << "cache.freq(4) = " << cache.freq(4) << '\n';
-    std::cout << '\n';
-    std::cout << "hits is     " << cache.hits()     << "\n";
-    std::cout << "size is     " << cache.size()     << "\n";
-    std::cout << "capacity is " << cache.capacity() << "\n";
+  int n_queries;
+  std::cin >> n_queries;
+  std::vector<int> queries;
+  std::queue<int> queries_queue;
 
-    return 0;
+  unsigned curr;
+  for (int i = 0; i < n_queries; i++) {
+    std::cin >> curr;
+    queries.push_back(curr);
+    queries_queue.push(curr);
+  }
+ 
+  caches::LFU_cache<int, int> cache {3};
+  for (int i = 0; i < queries.size(); i++) {
+    cache.get<SlowGetPage>(queries[i]);
+  }
+
+  std::cout << "LFU hits = " << cache.hits() << '\n';
+
+  caches::Belady_cache<int, int> beladka {3, queries_queue};
+  std::cout << "IDEAL hits = " << beladka.hits() << '\n';
+
+  return 0;
 }
