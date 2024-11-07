@@ -3,13 +3,14 @@
 
 #include <iostream>
 #include <list>
+#include <limits>
 #include <map>
 #include <unordered_map>
 #include <queue>
 
 namespace caches {
 
-constexpr size_t DefaultCapacity = 100;
+constexpr size_t DefaultCapacity = 0;
 
 template <typename KeyT, typename T>
 class LFU_cache {
@@ -64,7 +65,7 @@ public:
   size_t capacity() const { return capacity_; }
 
   void dump(std::ostream &out) {
-    out << "===================================================\n";
+    out << "================= LFU dump =================\n";
     out << "hits_     = " << hits_ << '\n';
     out << "size_     = " << size_ << '\n';
     out << "capacity_ = " << capacity_ << '\n';
@@ -74,13 +75,8 @@ public:
       out << '\t' << el.first << " -> " << el.second->data() << '\n';
 
     out << "FREQ NODES:\n";
-    for (auto frq : frq_nodes_) {
-      out << "\tfreq = " << frq.freq() << ": ";
-      for (auto val : frq.vals()) out << val.key() << ' ';
-
-      out << '\n';
-    }
-    out << "===================================================\n";
+    for (auto frq : frq_nodes_) frq.dump(out);
+    out << "============================================\n";
   }
 
 protected:
@@ -106,7 +102,6 @@ protected:
   }
 
 private:
-
   ValNodeIt inc_freq(ValNodeIt val) {
     FrqNodeIt frq = val->frq;
     FrqNodeIt next_frq = std::next(frq);
@@ -117,7 +112,7 @@ private:
     // this may be bad
     ValNodeIt new_val = next_frq->add_val(*val, next_frq);
     frq->rm_val(val);
-    if (frq->vals().size() == 0) frq_nodes_.erase(frq);
+    if (frq->size() == 0) frq_nodes_.erase(frq);
 
     // upd map_
     map_.erase(new_val->key());
@@ -132,7 +127,7 @@ private:
     }
 
     // todo
-    KeyT displaced_key = frq_nodes_.front().displace();
+    const KeyT &displaced_key = frq_nodes_.front().displace();
     map_.erase(displaced_key);
     size_--;
   }
@@ -165,8 +160,13 @@ private:
     }
 
     size_t freq() const { return freq_; }
+    size_t size() const { return val_nodes_.size(); }
 
-    const std::list<ValNode> &vals() const { return val_nodes_; }
+    void dump(std::ostream &out) {
+      out << "\tfreq = " << freq_ << ": ";
+      for (auto val : val_nodes_) out << val.key() << ' ';
+      out << '\n';
+    }
   };
 
   class ValNode {
@@ -183,74 +183,111 @@ private:
     const KeyT &key() const { return key_; }
     size_t freq()     const { return frq->freq(); }
   };
-
 };
 
 template <typename KeyT, typename T>
 class Belady_cache {
-
   using DataAccessFunc = T (*)(const KeyT &);
-
-  std::queue<KeyT> query_;
-  std::unordered_map<KeyT, T> map_;
 
   size_t hits_ = 0;
   size_t size_ = 0;
   size_t capacity_;
 
+  std::deque<KeyT> query_;
+  std::unordered_map<KeyT, T> map_;
+
+  DataAccessFunc AccessData_;
+
 public:
-  explicit Belady_cache(size_t capacity, std::queue<T> query) :
-    query_(query), capacity_(std::max(capacity, DefaultCapacity)) {}
-
-  template <DataAccessFunc AccessData>
-  const T &get(const KeyT &key) {
-    if (key != query_.front())
-      std::cerr << "Expected and received key mismatch\n";
-
-    query_.pop();
-
-    auto map_it = map_.find(key);
-    if (map_it == map_.end()) map_it = add<AccessData>(key);
-    else hits_++;
-
-    return map_it->second;
-  }
+  explicit
+  Belady_cache(size_t capacity, std::deque<T> query, DataAccessFunc AccessData) :
+    capacity_(std::max(capacity, DefaultCapacity)), query_(query),
+    map_(capacity_), AccessData_(AccessData) {}
 
   size_t hits() const { return hits_; }
   size_t size() const { return size_; }
   size_t capacity() const { return capacity_; }
 
 private:
-  template <DataAccessFunc AccessData>
+  const T &get(const KeyT &key) {
+    if (key != query_.front())
+      std::cerr << "Expected and received key mismatch\n";
+
+    query_.pop_front();
+
+    auto map_it = map_.find(key);
+    if (map_it == map_.end()) map_it = add(key);
+    else hits_++;
+
+    return map_it->second;
+  }
+
   auto add(const KeyT &key) {
     auto map_it = map_.find(key);
     if (map_it != map_.end()) return map_it;
 
     if (size_ == capacity_) displace();
 
-    map_it = map_.emplace(key, AccessData(key))->first;
+    map_it = map_.emplace(key, AccessData_(key)).first;
     size_++;
 
     return map_it;
   }
 
   void displace() {
-    std::map<KeyT, int> next_query;
+    const KeyT &displace_key = displace_choose();
+    map_.erase(displace_key);
+    size_--;
+  }
+
+  KeyT displace_choose() {
+    std::unordered_map<KeyT, int> next_query;
 
     int i = 0;
-    for (auto it = query_.begin(); it != query_.end(); ++it, i++) {
+    for (auto it = query_.begin(); it != query_.end(); ++it, ++i) {
       // if elem not in map - skip
       // as we can displace only existing elems
       if (map_.find(*it) == map_.end()) continue;
 
-      // add not tracked elem
-      if (next_query.find(*it) != next_query.end()) continue;
-      else next_query.emplace(*it, i);
+      // add not tracked elem's first occurence
+      if (next_query.find(*it) == next_query.end()) next_query.emplace(*it, i);
     }
 
-    auto displace_key = next_query.front().second;
-    map_.erase(*displace_key);
-    size_--;
+    // key in cache which wont be accessed anymore
+    for (auto map_it = map_.begin(); map_it != map_.end(); ++map_it) {
+      if (next_query.find(map_it->first) == next_query.end())
+        return map_it->first;
+    }
+
+    auto displace = next_query.begin();
+    for (auto it = next_query.begin(); it != next_query.end(); ++it)
+      if (it->second > next_query.find(displace->first)->second)
+        displace = it;
+
+    return displace->first;
+  }
+
+public:
+  void dump(std::ostream &out) {
+    out << "============== Belady dump =================\n";
+    out << "cache: ";
+    for (auto &p: map_) out << p.first << " ";
+    out << '\n';
+    out << "queue: ";
+    for (auto &q : query_) out << q << " ";
+    out << '\n';
+    out << "============================================\n";
+  }
+
+  void run() {
+    int n_queries = query_.size();
+    for (int i = 0; i < n_queries; i++) {
+      // //for debug
+      // std::cerr << "get(" << query_.front() << ") = "
+                // << get(query_.front()) << "\n";
+      // dump(std::cout);
+      get(query_.front());
+    }
   }
 };
 
