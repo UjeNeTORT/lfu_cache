@@ -5,15 +5,30 @@ Least Frequently Used cache is an algorithm with better performance than LRU
 
 ## Build and usage
 
-> [!NOTE]
-> Sorry! I will make better build later when i have more files in the project
+1. clone repo
 
 ```bash
-g++ main.cpp 
+git clone https://github.com/UjeNeTORT/lfu_cache && cd lfu_cache 
+```
+
+2. build
+
+```bash
+mkdir build && cd build
 ```
 
 ```bash
-./a.out
+cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
+```
+
+```bash
+ninja
+```
+
+3. test cache
+
+```bash
+./run_test
 ```
 
 ## Notes
