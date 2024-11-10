@@ -1,12 +1,13 @@
 #ifndef CACHE_HPP
 #define CACHE_HPP
 
+#include <deque>
 #include <iostream>
-#include <list>
 #include <limits>
+#include <list>
+#include <iostream>
 #include <map>
 #include <unordered_map>
-#include <list>
 
 namespace caches {
 
@@ -18,27 +19,28 @@ class LFU_cache {
   class FrqNode;
   class ValNode;
 
-  using FrqNodeIt = std::list<FrqNode>::iterator;
-  using ValNodeIt = std::list<ValNode>::iterator;
+  using FrqNodeIt = typename std::list<FrqNode>::iterator;
+  using ValNodeIt = typename std::list<ValNode>::iterator;
   using DataAccessFunc = T (*)(const KeyT &);
 
   size_t hits_ = 0;
   size_t size_ = 0;
-  size_t capacity_;
+  size_t capacity_ = DefaultCapacity;
 
   std::unordered_map<KeyT, ValNodeIt> map_;
   std::list<FrqNode> frq_nodes_;
 
-public:
-  explicit LFU_cache(size_t capacity = DefaultCapacity) :
-    capacity_(std::max(capacity, DefaultCapacity)), map_(capacity) {}
+  DataAccessFunc AccessData_;
 
-  template <DataAccessFunc AccessData>
+public:
+  explicit LFU_cache(size_t capacity, DataAccessFunc AccessData) :
+    capacity_(capacity), map_(capacity), AccessData_(AccessData) {}
+
   const T &get(const KeyT &key) {
     auto map_it = map_.find(key);
 
     if (map_it == map_.end())
-      map_it = add<AccessData>(key);
+      map_it = add(key);
     else
       hits_++;
 
@@ -49,9 +51,8 @@ public:
     return map_it->second->data();
   }
 
-  template <DataAccessFunc AccessData>
   auto add(const KeyT &key) {
-    return add(key, AccessData(key));
+    return add(key, AccessData_(key));
   }
 
   size_t freq(const KeyT &key) const {
@@ -191,7 +192,7 @@ class Belady_cache {
 
   size_t hits_ = 0;
   size_t size_ = 0;
-  size_t capacity_;
+  size_t capacity_ = DefaultCapacity;
 
   std::deque<KeyT> query_;
   std::unordered_map<KeyT, T> map_;
@@ -200,8 +201,9 @@ class Belady_cache {
 
 public:
   explicit
-  Belady_cache(size_t capacity, std::deque<T> query, DataAccessFunc AccessData) :
-    capacity_(std::max(capacity, DefaultCapacity)), query_(query),
+  Belady_cache(size_t capacity, std::deque<T> query,
+               DataAccessFunc AccessData) :
+    capacity_(capacity), query_(query),
     map_(capacity_), AccessData_(AccessData) {}
 
   size_t hits() const { return hits_; }
@@ -254,10 +256,9 @@ private:
     }
 
     // key in cache which wont be accessed anymore
-    for (auto map_it = map_.begin(); map_it != map_.end(); ++map_it) {
+    for (auto map_it = map_.begin(); map_it != map_.end(); ++map_it)
       if (next_query.find(map_it->first) == next_query.end())
         return map_it->first;
-    }
 
     auto displace = next_query.begin();
     for (auto it = next_query.begin(); it != next_query.end(); ++it)

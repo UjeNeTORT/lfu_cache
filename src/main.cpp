@@ -24,9 +24,9 @@ int main() {
     queries_queue.push_back(curr);
   }
 
-  caches::LFU_cache<int, int> cache {3};
+  caches::LFU_cache<int, int> cache {3, SlowGetPage};
   for (int i = 0; i < queries.size(); i++) {
-    cache.get<SlowGetPage>(queries[i]);
+    cache.get(queries[i]);
   }
 
   std::cout << "LFU hits = " << cache.hits() << '\n';
