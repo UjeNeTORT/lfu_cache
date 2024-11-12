@@ -1,7 +1,6 @@
 #ifndef CACHE_HPP
 #define CACHE_HPP
 
-#include <deque>
 #include <iostream>
 #include <limits>
 #include <list>
@@ -194,17 +193,39 @@ class Belady_cache {
   size_t size_ = 0;
   size_t capacity_ = DefaultCapacity;
 
-  std::deque<KeyT> query_;
+  // to predict displace candidates
+  std::list<KeyT> query_;
+  std::unordered_map<KeyT, std::list<KeyT>> next_query_;
+
+  // "cached" values
   std::unordered_map<KeyT, T> map_;
 
   DataAccessFunc AccessData_;
 
 public:
   explicit
-  Belady_cache(size_t capacity, std::deque<T> query,
-               DataAccessFunc AccessData) :
-    capacity_(capacity), query_(query),
-    map_(capacity_), AccessData_(AccessData) {}
+  Belady_cache(size_t capacity, std::list<KeyT> query, DataAccessFunc AccessData) :
+    capacity_(capacity), query_(query), map_(capacity_), AccessData_(AccessData) {
+
+    // each list is responsible for occurence of one key in query_
+    // first elem of list is a number of queries until get(this key) query
+    // all the other elems are deltas between each other
+    // this is done to avoid costly list iterations each time we update it
+    int n_query = 0;
+    for (auto const &q : query_) {
+      // todo can be shortened
+      auto map_it = next_query_.find(q);
+      if (map_it == next_query_.end())
+        map_it = next_query_.emplace(q, std::list<KeyT>{}).first;
+
+      map_it->second.push_back(n_query);
+      if (map_it->second.size() > 1) {
+        auto prev = ----map_it->second.end();
+        map_it->second.back() -= *prev;
+      }
+      n_query++;
+    }
+  }
 
   size_t hits() const { return hits_; }
   size_t size() const { return size_; }
@@ -215,11 +236,11 @@ private:
     if (key != query_.front())
       std::cerr << "Expected and received key mismatch\n";
 
-    query_.pop_front();
-
     auto map_it = map_.find(key);
     if (map_it == map_.end()) map_it = add(key);
     else hits_++;
+
+    update_queries();
 
     return map_it->second;
   }
@@ -243,29 +264,22 @@ private:
   }
 
   KeyT displace_choose() {
-    std::unordered_map<KeyT, int> next_query;
+    KeyT res = next_query_.begin()->second.front();
+    for (auto q = next_query_.begin(); q != next_query_.end(); ++q)
+      if (q->second.front() > res) res = q->second.front();
 
-    int i = 0;
-    for (auto it = query_.begin(); it != query_.end(); ++it, ++i) {
-      // if elem not in map - skip
-      // as we can displace only existing elems
-      if (map_.find(*it) == map_.end()) continue;
+    return res;
+  }
 
-      // add not tracked elem's first occurence
-      if (next_query.find(*it) == next_query.end()) next_query.emplace(*it, i);
+  void update_queries() {
+    for (auto map_it = next_query_.begin(); map_it != next_query_.end(); ++map_it) {
+      if (map_it->second.empty()) continue;
+
+      map_it->second.front()--; // frst el - distance, others - delta compared to prev
+      if (map_it->second.front() == 0) map_it->second.pop_front();
     }
 
-    // key in cache which wont be accessed anymore
-    for (auto map_it = map_.begin(); map_it != map_.end(); ++map_it)
-      if (next_query.find(map_it->first) == next_query.end())
-        return map_it->first;
-
-    auto displace = next_query.begin();
-    for (auto it = next_query.begin(); it != next_query.end(); ++it)
-      if (it->second > next_query.find(displace->first)->second)
-        displace = it;
-
-    return displace->first;
+    query_.pop_front();
   }
 
 public:
@@ -277,18 +291,19 @@ public:
     out << "queue: ";
     for (auto &q : query_) out << q << " ";
     out << '\n';
+    out << "next_query:\n";
+    for (auto map_it = next_query_.begin(); map_it != next_query_.end(); ++map_it) {
+      out << '\t' << map_it->first << ": ";
+      for (auto &q_delta : map_it->second) out << q_delta << ' ';
+      out << '\n';
+    }
     out << "============================================\n";
   }
 
   void run() {
     int n_queries = query_.size();
-    for (int i = 0; i < n_queries; i++) {
-      // //for debug
-      // std::cerr << "get(" << query_.front() << ") = "
-                // << get(query_.front()) << "\n";
-      // dump(std::cout);
+    for (int i = 0; i < n_queries; i++)
       get(query_.front());
-    }
   }
 };
 

@@ -1,7 +1,6 @@
 #include <iostream>
 #include <list>
 #include <vector>
-#include <deque>
 #include <unordered_map>
 
 #include "cache.hpp"
@@ -15,7 +14,7 @@ int main() {
   int n_queries;
   std::cin >> n_queries;
   std::vector<int> queries;
-  std::deque<int> queries_queue;
+  std::list<int> queries_queue;
 
   unsigned curr;
   for (int i = 0; i < n_queries; i++) {

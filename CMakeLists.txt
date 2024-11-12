@@ -4,13 +4,16 @@ project(caches)
 set(CMAKE_CXX_STANDARD_REQUIRED 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# add_compile_options("-fsanitize=address")
+add_compile_options("-fsanitize=address")
+add_link_options("-fsanitize=address")
 
-add_executable(run_cache src/main.cpp)
-target_include_directories(run_cache PRIVATE include/)
+add_executable(testgen src/testgen.cpp)
+
+add_executable(cache src/main.cpp)
+target_include_directories(cache PRIVATE include/)
 
 find_library(GTEST_LIBRARY NAMES gtest gtest_main)
 
-add_executable(run_test src/test.cpp)
-target_include_directories(run_test PRIVATE include/)
-target_link_libraries(run_test ${GTEST_LIBRARY})
+add_executable(test src/test.cpp)
+target_include_directories(test PRIVATE include/)
+target_link_libraries(test ${GTEST_LIBRARY})
