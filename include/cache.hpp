@@ -231,10 +231,9 @@ public:
       n_query++;
     }
 
+    // it does not matter what displace candidate is when cache is empty
+    // it will be updated when first get() query processed
     curr_most_remote_ = next_query_.begin();
-    for (auto map_it = next_query_.begin(); map_it != next_query_.end(); ++map_it)
-      if (map_it->second.front() > curr_most_remote_->second.front())
-        curr_most_remote_ = map_it;
   }
 
   size_t hits() const { return hits_; }
@@ -270,9 +269,7 @@ private:
   }
 
   void displace() {
-    const KeyT &displace_key = displace_choose();
-    // std::cerr << "displace choose = " << displace_key << '\n';
-    map_.erase(displace_key);
+    map_.erase(curr_most_remote_->first);
     size_--;
   }
 
@@ -294,21 +291,31 @@ private:
 
   void update_queries() {
     for (auto map_it = next_query_.begin(); map_it != next_query_.end(); ++map_it) {
-      if (map_it->second.empty()) continue;
-
-      int &front_el = map_it->second.front();
-      if (front_el == 0) {
-        map_it->second.pop_front();
-        map_it->second.front()--;
-
-        // if el in map and further than furthest => make it a displace candidate
-        if (map_it->second.front() > curr_most_remote_->second.front() &&
-            map_.find(map_it->first) != map_.end())
+      if (map_it->second.empty()) {
+        if (map_.find(map_it->first) != map_.end())
           curr_most_remote_ = map_it;
-      } else {
-        front_el--; // frst el - distance, others - delta compared to prev
+        continue;
       }
+
+      if (map_it->second.front() == 0) map_it->second.pop_front();
+      map_it->second.front()--; // frst el - distance, others - delta compared to prev
     }
+
+    for (auto map_it = next_query_.begin(); map_it != next_query_.end(); ++map_it) {
+
+      // if el in map and further than furthest => make it a displace candidate
+
+      if (map_.find(map_it->first) == map_.end()) continue;
+
+      if (map_it->second.empty()) {
+        curr_most_remote_ = map_it;
+        break;
+      }
+
+      if (map_it->second.front() > curr_most_remote_->second.front())
+        curr_most_remote_ = map_it;
+    }
+
     query_.pop_front();
   }
 
