@@ -24,7 +24,7 @@ int main() {
   }
 
   caches::LFU_cache<int, int> cache {3, SlowGetPage};
-  for (int i = 0; i < queries.size(); i++) {
+  for (size_t i = 0; i < queries.size(); i++) {
     cache.get(queries[i]);
   }
 

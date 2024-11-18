@@ -4,8 +4,8 @@
 #include <iostream>
 #include <limits>
 #include <list>
-#include <iostream>
 #include <map>
+#include <numeric>
 #include <unordered_map>
 
 namespace caches {
@@ -193,9 +193,11 @@ class Belady_cache {
   size_t size_ = 0;
   size_t capacity_ = DefaultCapacity;
 
-  // to predict displace candidates
+  // to predict displace keys
   std::list<KeyT> query_;
-  std::unordered_map<KeyT, std::list<KeyT>> next_query_;
+  std::unordered_map<KeyT, std::list<int>> next_query_;
+  typename decltype(next_query_)::iterator curr_most_remote_;
+  // todo curr least remote
 
   // "cached" values
   std::unordered_map<KeyT, T> map_;
@@ -211,20 +213,28 @@ public:
     // first elem of list is a number of queries until get(this key) query
     // all the other elems are deltas between each other
     // this is done to avoid costly list iterations each time we update it
+    //
+    // use dump() to examine next_query_ structure
     int n_query = 0;
     for (auto const &q : query_) {
-      // todo can be shortened
       auto map_it = next_query_.find(q);
       if (map_it == next_query_.end())
-        map_it = next_query_.emplace(q, std::list<KeyT>{}).first;
+        map_it = next_query_.emplace(q, std::list<int>{}).first;
 
       map_it->second.push_back(n_query);
       if (map_it->second.size() > 1) {
-        auto prev = ----map_it->second.end();
-        map_it->second.back() -= *prev;
+        auto prev = --map_it->second.end();
+        int sum_prev = std::accumulate(map_it->second.begin(), prev, 0);
+        map_it->second.back() = n_query - sum_prev;
       }
+
       n_query++;
     }
+
+    curr_most_remote_ = next_query_.begin();
+    for (auto map_it = next_query_.begin(); map_it != next_query_.end(); ++map_it)
+      if (map_it->second.front() > curr_most_remote_->second.front())
+        curr_most_remote_ = map_it;
   }
 
   size_t hits() const { return hits_; }
@@ -235,6 +245,8 @@ private:
   const T &get(const KeyT &key) {
     if (key != query_.front())
       std::cerr << "Expected and received key mismatch\n";
+
+    // dump(std::cerr);
 
     auto map_it = map_.find(key);
     if (map_it == map_.end()) map_it = add(key);
@@ -259,14 +271,23 @@ private:
 
   void displace() {
     const KeyT &displace_key = displace_choose();
+    // std::cerr << "displace choose = " << displace_key << '\n';
     map_.erase(displace_key);
     size_--;
   }
 
   KeyT displace_choose() {
-    KeyT res = next_query_.begin()->second.front();
-    for (auto q = next_query_.begin(); q != next_query_.end(); ++q)
+    KeyT res = map_.begin()->first;
+    for (auto q = next_query_.begin(); q != next_query_.end(); ++q) {
+      if (map_.find(q->first) == map_.end()) continue;
+
+      if (next_query_.find(q->first)->second.empty()) {
+        res = q->first;
+        break;
+      }
+
       if (q->second.front() > res) res = q->second.front();
+      }
 
     return res;
   }
@@ -275,22 +296,34 @@ private:
     for (auto map_it = next_query_.begin(); map_it != next_query_.end(); ++map_it) {
       if (map_it->second.empty()) continue;
 
-      map_it->second.front()--; // frst el - distance, others - delta compared to prev
-      if (map_it->second.front() == 0) map_it->second.pop_front();
-    }
+      int &front_el = map_it->second.front();
+      if (front_el == 0) {
+        map_it->second.pop_front();
+        map_it->second.front()--;
 
+        // if el in map and further than furthest => make it a displace candidate
+        if (map_it->second.front() > curr_most_remote_->second.front() &&
+            map_.find(map_it->first) != map_.end())
+          curr_most_remote_ = map_it;
+      } else {
+        front_el--; // frst el - distance, others - delta compared to prev
+      }
+    }
     query_.pop_front();
   }
 
 public:
   void dump(std::ostream &out) {
     out << "============== Belady dump =================\n";
+    out << "size/capacity: " << size_ << "/" << capacity_ << '\n';
+    out << "hits = " << hits_ << '\n';
     out << "cache: ";
     for (auto &p: map_) out << p.first << " ";
     out << '\n';
     out << "queue: ";
     for (auto &q : query_) out << q << " ";
     out << '\n';
+    out << "most_remote: " << curr_most_remote_->first << '\n';
     out << "next_query:\n";
     for (auto map_it = next_query_.begin(); map_it != next_query_.end(); ++map_it) {
       out << '\t' << map_it->first << ": ";
@@ -302,8 +335,9 @@ public:
 
   void run() {
     int n_queries = query_.size();
-    for (int i = 0; i < n_queries; i++)
+    for (int i = 0; i < n_queries; i++) {
       get(query_.front());
+    }
   }
 };
 

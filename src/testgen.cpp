@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 
   test_file << capacity << ' ' << n_queries << ' ' << answer_placeholder << '\n';
 
-  for (int i = 0; i < n_queries; i++)
+  for (size_t i = 0; i < n_queries; i++)
     test_file << rand() % elem_threshold << ' ';
 
   test_file << '\n';

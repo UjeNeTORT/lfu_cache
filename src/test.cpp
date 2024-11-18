@@ -25,7 +25,7 @@ TEST(LFU, hits) {
       testfile >> capacity >> n_queries >> answer;
 
     caches::LFU_cache<int, int> cache {capacity, SlowGetPage};
-    for (int i = 0; i < n_queries; i++) {
+    for (size_t i = 0; i < n_queries; i++) {
       testfile >> key;
       cache.get(key);
     }
@@ -55,7 +55,7 @@ TEST(LFU, stress) {
     std::cerr << fpath << ' ';
 
     caches::LFU_cache<int, int> cache {capacity, SlowGetPage};
-    for (int i = 0; i < n_queries; i++) {
+    for (size_t i = 0; i < n_queries; i++) {
       testfile >> key;
       cache.get(key);
     }

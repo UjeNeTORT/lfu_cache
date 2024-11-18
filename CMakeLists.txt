@@ -4,8 +4,8 @@ project(caches)
 set(CMAKE_CXX_STANDARD_REQUIRED 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_compile_options("-fsanitize=address")
-add_link_options("-fsanitize=address")
+set (CMAKE_CXX_FLAGS_DEBUG "-Wall -g -O0 -fsanitize=address")
+set (CMAKE_CXX_FLAGS_RELEASE "-O2")
 
 add_executable(testgen src/testgen.cpp)
 
