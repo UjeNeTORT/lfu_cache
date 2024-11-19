@@ -64,7 +64,7 @@ public:
   size_t size() const { return size_; }
   size_t capacity() const { return capacity_; }
 
-  void dump(std::ostream &out) {
+  void dump(std::ostream &out) const {
     out << "================= LFU dump =================\n";
     out << "hits_     = " << hits_ << '\n';
     out << "size_     = " << size_ << '\n';
@@ -112,7 +112,7 @@ private:
     // this may be bad
     ValNodeIt new_val = next_frq->add_val(*val, next_frq);
     frq->rm_val(val);
-    if (frq->size() == 0) frq_nodes_.erase(frq);
+    if (frq->empty()) frq_nodes_.erase(frq);
 
     // upd map_
     map_.erase(new_val->key());
@@ -126,7 +126,6 @@ private:
       return;
     }
 
-    // todo
     const KeyT &displaced_key = frq_nodes_.front().displace();
     map_.erase(displaced_key);
     size_--;
@@ -141,12 +140,13 @@ private:
 
     ValNodeIt add_val(ValNode &val, FrqNodeIt frq) {
       val.frq = frq;
-      return val_nodes_.insert(val_nodes_.begin(), val);
+      val_nodes_.push_front(val);
+      return val_nodes_.begin();
     }
 
-    //? i dont understand this rvalue ref
-    ValNodeIt add_val(ValNode &&val) {
-      return val_nodes_.insert(val_nodes_.begin(), val);
+    ValNodeIt add_val(const ValNode &val) {
+      val_nodes_.push_front(val);
+      return val_nodes_.begin();
     }
 
     void rm_val(ValNodeIt val) {
@@ -159,10 +159,11 @@ private:
       return displaced_key;
     }
 
+    bool empty() const { return val_nodes_.size() == 0; }
     size_t freq() const { return freq_; }
     size_t size() const { return val_nodes_.size(); }
 
-    void dump(std::ostream &out) {
+    void dump(std::ostream &out) const {
       out << "\tfreq = " << freq_ << ": ";
       for (auto val : val_nodes_) out << val.key() << ' ';
       out << '\n';
@@ -200,9 +201,7 @@ class Belady_cache {
   size_t curr_n_query_ = 0;
 
   // "cached" values
-  //? how to avoid such a long definition?
   std::unordered_map<KeyT, T> map_;
-  // in order to go from get complexity O(n^2 * m) to O(n * m)
 
   DataAccessFunc AccessData_;
 
@@ -280,7 +279,6 @@ private:
     return curr_max->first;
   }
 
-  // todo
   void update_queries() {
     auto curr_q = next_query_.find(query_.front());
     if (curr_q != next_query_.end()) curr_q->second.pop_front();
@@ -290,7 +288,7 @@ private:
   }
 
 public:
-  void dump(std::ostream &out) {
+  void dump(std::ostream &out) const {
     out << "============== Belady dump =================\n";
     out << "size/capacity: " << size_ << "/" << capacity_ << '\n';
     out << "hits = " << hits_ << '\n';
