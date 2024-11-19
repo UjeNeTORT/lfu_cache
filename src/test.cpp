@@ -18,8 +18,10 @@ TEST(LFU, hits) {
     std::ifstream testfile;
     testfile.open(fpath);
 
-    size_t capacity, n_queries, answer;
-    int key;
+    size_t capacity = 0;
+    size_t n_queries = 0;
+    size_t answer = 0;
+    int key = 0;
 
     if (testfile.is_open())
       testfile >> capacity >> n_queries >> answer;
@@ -46,8 +48,10 @@ TEST(LFU, stress) {
     std::ifstream testfile;
     testfile.open(fpath);
 
-    size_t capacity, n_queries, answer_not_used;
-    int key;
+    size_t capacity = 0;
+    size_t n_queries = 0;
+    size_t answer_not_used = 0;
+    int key = 0;
 
     if (testfile.is_open())
       testfile >> capacity >> n_queries >> answer_not_used;
@@ -74,9 +78,10 @@ TEST(belady, hits) {
     auto fpath = dir_entry.path();
     std::ifstream testfile {fpath};
 
-    size_t capacity, answer;
-    int n_queries;
-    int key;
+    size_t capacity = 0;
+    size_t answer = 0;
+    int n_queries = 0;
+    int key = 0;
 
     if (testfile.is_open())
       testfile >> capacity >> n_queries >> answer;
@@ -105,9 +110,10 @@ TEST(belady, stress) {
     std::ifstream testfile {fpath};
     std::cerr << fpath << ' ';
 
-    size_t capacity, answer_not_used;
-    int n_queries;
-    int key;
+    size_t capacity = 0;
+    size_t answer_not_used = 0;
+    int n_queries = 0;
+    int key = 0;
 
     if (testfile.is_open())
       testfile >> capacity >> n_queries >> answer_not_used;
@@ -135,9 +141,10 @@ TEST(cache_compare, lfu_less_hits_than_ideal) {
     std::ifstream testfile {fpath};
     std::cerr << fpath << ' ';
 
-    size_t capacity, answer_not_used;
-    int n_queries;
-    int key;
+    size_t capacity = 0;
+    size_t answer_not_used = 0;
+    int n_queries = 0;
+    int key = 0;
 
     if (testfile.is_open())
       testfile >> capacity >> n_queries >> answer_not_used;

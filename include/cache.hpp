@@ -197,17 +197,20 @@ class Belady_cache {
   std::list<KeyT> query_;
   std::unordered_map<KeyT, std::list<int>> next_query_;
   typename decltype(next_query_)::iterator curr_most_remote_;
-  // todo curr least remote
 
   // "cached" values
-  std::unordered_map<KeyT, T> map_;
+  //? how to avoid such a long definition?
+  // todo develop the idea of storing an iterator to a next_query
+  using CacheEntry = std::pair<T, typename decltype(next_query_)::iterator>;
+  std::unordered_map<KeyT, CacheEntry> map_;
+  // in order to go from get complexity O(n^2 * m) to O(n * m)
 
   DataAccessFunc AccessData_;
 
 public:
   explicit
   Belady_cache(size_t capacity, std::list<KeyT> query, DataAccessFunc AccessData) :
-    capacity_(capacity), query_(query), map_(capacity_), AccessData_(AccessData) {
+    capacity_(capacity), query_(query), map_(capacity), AccessData_(AccessData) {
 
     // each list is responsible for occurence of one key in query_
     // first elem of list is a number of queries until get(this key) query
@@ -253,7 +256,7 @@ private:
 
     update_queries();
 
-    return map_it->second;
+    return map_it->second.first;
   }
 
   auto add(const KeyT &key) {
@@ -262,59 +265,61 @@ private:
 
     if (size_ == capacity_) displace();
 
-    map_it = map_.emplace(key, AccessData_(key)).first;
+    map_it = map_.emplace(key,
+                      CacheEntry{AccessData_(key), next_query_.find(key)}).first;
     size_++;
 
     return map_it;
   }
 
   void displace() {
-    map_.erase(curr_most_remote_->first);
+    map_.erase(displace_choose());
     size_--;
   }
 
   KeyT displace_choose() {
-    KeyT res = map_.begin()->first;
-    for (auto q = next_query_.begin(); q != next_query_.end(); ++q) {
-      if (map_.find(q->first) == map_.end()) continue;
-
-      if (next_query_.find(q->first)->second.empty()) {
-        res = q->first;
+    auto curr_max = map_.begin();
+    for (auto cache_it = map_.begin(); cache_it != map_.end(); ++cache_it) {
+      if (cache_it->second.second->second.empty()) {
+        curr_max = cache_it;
         break;
       }
 
-      if (q->second.front() > res) res = q->second.front();
-      }
+      if (cache_it->second.second->second.front() >
+          curr_max->second.second->second.front())
+        curr_max = cache_it;
+    }
 
-    return res;
+    return curr_max->first;
   }
 
   void update_queries() {
     for (auto map_it = next_query_.begin(); map_it != next_query_.end(); ++map_it) {
       if (map_it->second.empty()) {
-        if (map_.find(map_it->first) != map_.end())
-          curr_most_remote_ = map_it;
+        // if (map_.find(map_it->first) != map_.end())
+          // curr_most_remote_ = map_it;
+
         continue;
       }
 
       if (map_it->second.front() == 0) map_it->second.pop_front();
-      map_it->second.front()--; // frst el - distance, others - delta compared to prev
+      map_it->second.front()--;
     }
 
-    for (auto map_it = next_query_.begin(); map_it != next_query_.end(); ++map_it) {
+    // for (auto map_it = next_query_.begin(); map_it != next_query_.end(); ++map_it) {
 
-      // if el in map and further than furthest => make it a displace candidate
+      // // if el in map and further than furthest => make it a displace candidate
 
-      if (map_.find(map_it->first) == map_.end()) continue;
+      // if (map_.find(map_it->first) == map_.end()) continue;
 
-      if (map_it->second.empty()) {
-        curr_most_remote_ = map_it;
-        break;
-      }
+      // if (map_it->second.empty()) {
+        // curr_most_remote_ = map_it;
+        // break;
+      // }
 
-      if (map_it->second.front() > curr_most_remote_->second.front())
-        curr_most_remote_ = map_it;
-    }
+      // if (map_it->second.front() > curr_most_remote_->second.front())
+        // curr_most_remote_ = map_it;
+    // }
 
     query_.pop_front();
   }
@@ -344,6 +349,7 @@ public:
     int n_queries = query_.size();
     for (int i = 0; i < n_queries; i++) {
       get(query_.front());
+      if (i % 1000 == 0) std::cerr << i << '\n';
     }
   }
 };
