@@ -1,3 +1,6 @@
+#
+.gitignore
+
 # Prerequisites
 *.d
 
@@ -30,3 +33,11 @@
 *.exe
 *.out
 *.app
+
+# build folder
+build/
+build_release/
+
+
+# vs code folder
+.vscode/

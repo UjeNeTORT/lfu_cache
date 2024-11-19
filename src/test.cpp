@@ -46,6 +46,8 @@ TEST(LFU, stress) {
     if (!dir_entry.is_regular_file()) continue;
     auto fpath = dir_entry.path();
     std::ifstream testfile;
+    // std::cerr << fpath << ' ';
+
     testfile.open(fpath);
 
     size_t capacity = 0;
@@ -56,7 +58,6 @@ TEST(LFU, stress) {
     if (testfile.is_open())
       testfile >> capacity >> n_queries >> answer_not_used;
 
-    std::cerr << fpath << ' ';
 
     caches::LFU_cache<int, int> cache {capacity, SlowGetPage};
     for (size_t i = 0; i < n_queries; i++) {
@@ -64,7 +65,7 @@ TEST(LFU, stress) {
       cache.get(key);
     }
     testfile.close();
-    std::cerr << " (hits = " << cache.hits() << ")\n";
+    // std::cerr << " (hits = " << cache.hits() << ")\n";
   }
 }
 
@@ -108,7 +109,7 @@ TEST(belady, stress) {
     if (!dir_entry.is_regular_file()) continue;
     auto fpath = dir_entry.path();
     std::ifstream testfile {fpath};
-    std::cerr << fpath << ' ';
+    // std::cerr << fpath << ' ';
 
     size_t capacity = 0;
     size_t answer_not_used = 0;
@@ -126,7 +127,7 @@ TEST(belady, stress) {
 
     caches::Belady_cache<int, int> beladka {capacity, queries, SlowGetPage};
     beladka.run();
-    std::cerr << " (hits = " << beladka.hits() << ")\n";
+    // std::cerr << " (hits = " << beladka.hits() << ")\n";
   }
 }
 
@@ -139,7 +140,7 @@ TEST(cache_compare, lfu_less_hits_than_ideal) {
     if (!dir_entry.is_regular_file()) continue;
     auto fpath = dir_entry.path();
     std::ifstream testfile {fpath};
-    std::cerr << fpath << ' ';
+    // std::cerr << fpath << ' ';
 
     size_t capacity = 0;
     size_t answer_not_used = 0;
