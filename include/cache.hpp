@@ -32,7 +32,10 @@ class LFU_cache {
   DataAccessFunc AccessData_;
 
 public:
-  explicit LFU_cache(size_t capacity, DataAccessFunc AccessData) :
+  LFU_cache() : map_(capacity_), frq_nodes_(capacity_) {}
+
+  explicit
+  LFU_cache(size_t capacity, DataAccessFunc AccessData) :
     capacity_(capacity), map_(capacity), AccessData_(AccessData) {}
 
   const T &get(const KeyT &key) {
@@ -194,28 +197,29 @@ class Belady_cache {
   size_t size_ = 0;
   size_t capacity_ = DefaultCapacity;
 
-  // to predict displace keys
-  std::list<KeyT> query_;
+  // In order to predict displace keys, here each list is responsible for
+  // occurence of one key in query_.
+  // Each elem of a list is a number of queries until get(this key) query.
+  // This is done to quickly choose most remote key element for displace
+  //
+  // use dump() to examine next_query_ structure
   std::unordered_map<KeyT, std::list<int>> next_query_;
+  // list representing current state of further queries
+  std::list<KeyT> query_;
 
   size_t curr_n_query_ = 0;
 
-  // "cached" values
+  // "cached" values (todo rename)
   std::unordered_map<KeyT, T> map_;
 
   DataAccessFunc AccessData_;
 
 public:
+  Belady_cache() : query_(), map_(capacity_) {};
   explicit
   Belady_cache(size_t capacity, std::list<KeyT> query, DataAccessFunc AccessData) :
     capacity_(capacity), query_(query), map_(capacity), AccessData_(AccessData) {
 
-    // each list is responsible for occurence of one key in query_
-    // first elem of list is a number of queries until get(this key) query
-    // all the other elems are deltas between each other
-    // this is done to avoid costly list iterations each time we update it
-    //
-    // use dump() to examine next_query_ structure
     int n_query = 0;
     for (auto const &q : query_) {
       auto map_it = next_query_.find(q);
@@ -227,6 +231,7 @@ public:
     }
   }
 
+  bool empty() const { return size_ == 0; }
   size_t hits() const { return hits_; }
   size_t size() const { return size_; }
   size_t capacity() const { return capacity_; }
