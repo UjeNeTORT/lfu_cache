@@ -28,7 +28,13 @@ ninja
 3. test cache
 
 ```bash
-./run_test
+./test
+```
+
+or run program itself
+
+```bash
+./cache
 ```
 
 ## Notes
