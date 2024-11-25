@@ -101,8 +101,6 @@ protected:
 TEST_F(TestLFU, hits) {
   std::filesystem::path test_dir = "../test/lfu";
 
-  auto SlowGetPage = [](const int &key) -> int { return key; };
-
   for (auto const &dir_entry : std::filesystem::directory_iterator(test_dir)) {
     if (!dir_entry.is_regular_file()) continue;
     auto fpath = dir_entry.path();
@@ -112,8 +110,6 @@ TEST_F(TestLFU, hits) {
 
 TEST_F(TestLFU, stress) {
   std::filesystem::path test_dir = "../test/";
-
-  auto SlowGetPage = [](const int &key) -> int { return key; };
 
   for (auto const &dir_entry : std::filesystem::recursive_directory_iterator(test_dir)) {
     if (!dir_entry.is_regular_file()) continue;
@@ -125,8 +121,6 @@ TEST_F(TestLFU, stress) {
 TEST_F(TestBelady, hits) {
   std::filesystem::path testcases = "../test/belady/";
 
-  auto SlowGetPage = [](const int &key) -> int { return key; };
-
   for (auto const &dir_entry : std::filesystem::directory_iterator(testcases)) {
     if (!dir_entry.is_regular_file()) continue;
     auto fpath = dir_entry.path();
@@ -136,8 +130,6 @@ TEST_F(TestBelady, hits) {
 
 TEST_F(TestBelady, stress) {
   std::filesystem::path testcases = "../test/";
-
-  auto SlowGetPage = [](const int &key) -> int { return key; };
 
   for (auto const &dir_entry : std::filesystem::recursive_directory_iterator(testcases)) {
     if (!dir_entry.is_regular_file()) continue;
