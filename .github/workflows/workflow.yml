@@ -14,11 +14,8 @@ jobs:
     steps:
     - name: configure
       run: |
-        pwd
         mkdir -p build
-        ls
-        cd build
-        cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
     - name: build
       run:  ninja
     - name: test_lfu_hits
