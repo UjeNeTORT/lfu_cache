@@ -4,30 +4,46 @@ on:
   push:
     branches:
     - main
+    - add-workflows
   pull_request:
     branches:
     - main
+    - add-workflows
 
 jobs:
   test_caches:
     runs-on: ubuntu-22.04
     steps:
+    
+    - name: install-dependencies
+      run: |
+        sudo apt update
+        sudo apt install cmake ninja-build build-essential libgtest-dev
+        
+    - name: checkout
+      uses: actions/checkout@v3
+      
     - name: configure
       run: |
-        pwd
-        mkdir -p build
-        ls
-        cd build
+        mkdir -p build && cd build
         cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
+        
     - name: build
       run:  ninja
+      working-directory: build
+      
     - name: test_lfu_hits
       run: ./test --gtest_filter=TestLFU.hits
+      working-directory: build
     - name: test_lfu_stress
-      run: ./test --gtest_filter=TestLFU.not_fall
+      run: ./test --gtest_filter=TestLFU.stress
+      working-directory: build
     - name: test_belady_hits
       run: ./test --gtest_filter=TestBelady.hits
-    - name: test_belady_hits
-      run: ./test --gtest_filter=TestBelady.not_fall
+      working-directory: build
+    - name: test_belady_stress
+      run: ./test --gtest_filter=TestBelady.stress
+      working-directory: build
     - name: test_compare
       run: ./test --gtest_filter=CompareCaches.lfu_less_hits_than_ideal
+      working-directory: build
