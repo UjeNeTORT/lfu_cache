@@ -41,7 +41,7 @@ jobs:
     - name: test_belady_hits
       run: ./test --gtest_filter=TestBelady.hits
       working-directory: build
-    - name: test_belady_hits
+    - name: test_belady_stress
       run: ./test --gtest_filter=TestBelady.not_fall
       working-directory: build
     - name: test_compare
