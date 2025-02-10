@@ -138,7 +138,7 @@ TEST_F(TestBelady, stress) {
   }
 }
 
-TEST(ComapeCaches, lfu_less_hits_than_ideal) {
+TEST(CompareCaches, lfu_less_hits_than_ideal) {
   std::filesystem::path testcases = "../test/";
 
   auto SlowGetPage = [](const int &key) -> int { return key; };

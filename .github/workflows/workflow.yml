@@ -1,0 +1,29 @@
+name: TestCache
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
+jobs:
+  test_caches:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: build
+      run: |
+        mkdir build && cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -G Ninja
+        ninja
+    - name: test_lfu_hits
+      run: ./test --gtest_filter=TestLFU.hits
+    - name: test_lfu_stress
+      run: ./test --gtest_filter=TestLFU.not_fall
+    - name: test_belady_hits
+      run: ./test --gtest_filter=TestBelady.hits
+    - name: test_belady_hits
+      run: ./test --gtest_filter=TestBelady.not_fall
+    - name: test_compare
+      run: ./test --gtest_filter=CompareCaches.lfu_less_hits_than_ideal
