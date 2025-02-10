@@ -30,14 +30,20 @@ jobs:
         
     - name: build
       run:  ninja
+      working-directory: build
       
     - name: test_lfu_hits
       run: ./test --gtest_filter=TestLFU.hits
+      working-directory: build
     - name: test_lfu_stress
       run: ./test --gtest_filter=TestLFU.not_fall
+      working-directory: build
     - name: test_belady_hits
       run: ./test --gtest_filter=TestBelady.hits
+      working-directory: build
     - name: test_belady_hits
       run: ./test --gtest_filter=TestBelady.not_fall
+      working-directory: build
     - name: test_compare
       run: ./test --gtest_filter=CompareCaches.lfu_less_hits_than_ideal
+      working-directory: build
