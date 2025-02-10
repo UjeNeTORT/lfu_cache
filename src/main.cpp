@@ -11,7 +11,9 @@ int main() {
   //  std::cout << "# Enter data in following format:\n"
   //            << "  n queries, ... (quries)\n\n";
 
+  size_t lfu_capacity = 0;
   int n_queries = 0;
+  std::cin >> lfu_capacity;
   std::cin >> n_queries;
   std::vector<int> queries;
   std::list<int> queries_queue;
@@ -23,7 +25,7 @@ int main() {
     queries_queue.push_back(curr);
   }
 
-  caches::LFU_cache<int, int> cache {3, SlowGetPage};
+  caches::LFU_cache<int, int> cache {lfu_capacity, SlowGetPage};
   for (size_t i = 0; i < queries.size(); i++) {
     cache.get(queries[i]);
   }

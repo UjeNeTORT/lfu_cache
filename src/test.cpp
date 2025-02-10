@@ -78,7 +78,7 @@ protected:
       std::cerr << "ERROR: could not open " << testf_path_ << '\n';
       return;
     }
-
+    std::cout << testf_path << '\n';
     testfile >> capacity_ >> n_queries_ >> answer_;
 
     int curr_key = 0;

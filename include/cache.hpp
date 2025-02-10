@@ -238,14 +238,18 @@ public:
 
 private:
   const T &get(const KeyT &key) {
-    if (key != query_.front())
-      std::cerr << "Expected and received key mismatch\n";
+    // if (key != query_.front())
+      // std::cerr << "Expected and received key mismatch\n";
 
     // dump(std::cerr);
 
     auto map_it = map_.find(key);
-    if (map_it == map_.end()) map_it = add(key);
-    else hits_++;
+    if (map_it == map_.end()) {
+      map_it = add(key);
+    }
+    else {
+      hits_++;
+    }
 
     update_queries();
 
@@ -270,15 +274,16 @@ private:
   }
 
   KeyT displace_choose() {
-    auto curr_max = next_query_.begin();
-    for (auto q_it = next_query_.begin(); q_it != next_query_.end(); ++q_it) {
-      if (q_it->second.empty()) {
-        curr_max = q_it;
+    auto curr_max = map_.begin();
+    for (auto map_it = map_.begin(); map_it != map_.end(); ++map_it) {
+      if (next_query_.find(map_it->first)->second.empty()) {
+        curr_max = map_it;
         break;
       }
 
-      if (q_it->second.front() > curr_max->second.front())
-        curr_max = q_it;
+      if (next_query_.find(map_it->first)->second.front() >
+          next_query_.find(curr_max->first)->second.front())
+        curr_max = map_it;
     }
 
     return curr_max->first;
@@ -315,6 +320,7 @@ public:
   void run() {
     int n_queries = query_.size();
     for (int i = 0; i < n_queries; i++) {
+      // if (i % 1000 == 0) std::cout << i << '\n';
       get(query_.front());
     }
   }

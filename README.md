@@ -18,7 +18,7 @@ mkdir build && cd build
 ```
 
 ```bash
-cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake .. -G Makefile -DCMAKE_BUILD_TYPE=Release
 ```
 
 ```bash
