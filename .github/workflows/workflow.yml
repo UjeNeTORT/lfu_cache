@@ -18,7 +18,7 @@ jobs:
     - name: install-dependencies
       run: |
         sudo apt update
-        sudo apt install cmake ninja-build build-essential
+        sudo apt install cmake ninja-build build-essential libgtest-dev
         
     - name: checkout
       uses: actions/checkout@v3
