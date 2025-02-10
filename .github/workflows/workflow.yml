@@ -12,11 +12,13 @@ jobs:
   test_caches:
     runs-on: ubuntu-22.04
     steps:
-    - name: build
+    - name: configure
       run: |
-        mkdir build && cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -G Ninja
-        ninja
+        mkdir build
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release
+    - name: build
+      run:  ninja
     - name: test_lfu_hits
       run: ./test --gtest_filter=TestLFU.hits
     - name: test_lfu_stress
