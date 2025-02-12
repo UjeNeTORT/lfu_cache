@@ -269,24 +269,34 @@ private:
   }
 
   void displace() {
-    map_.erase(displace_choose());
-    size_--;
-  }
+    KeyT displace_candidate = map_.begin()->first;
 
-  KeyT displace_choose() {
+    // former displace_choose()
     auto curr_max = map_.begin();
-    for (auto map_it = map_.begin(); map_it != map_.end(); ++map_it) {
-      if (next_query_.find(map_it->first)->second.empty()) {
-        curr_max = map_it;
+    auto curr_next_query = next_query_.begin();
+    auto curr_next_max = next_query_.find(curr_max->first);
+
+    for (auto cache_it = map_.begin(), cache_end = map_.end();
+                                            cache_it != cache_end; ++cache_it) {
+      curr_next_query = next_query_.find(cache_it->first);
+
+      if (curr_next_query->second.empty()) {
+        curr_max = cache_it;
+        curr_next_max = next_query_.find(curr_max->first);
         break;
       }
 
-      if (next_query_.find(map_it->first)->second.front() >
-          next_query_.find(curr_max->first)->second.front())
-        curr_max = map_it;
+      if (curr_next_query->second.front() >
+                        curr_next_max->second.front()) {
+        curr_max = cache_it;
+        curr_next_max = next_query_.find(curr_max->first);
+      }
     }
 
-    return curr_max->first;
+    displace_candidate = curr_max->first;
+
+    map_.erase(displace_candidate);
+    size_--;
   }
 
   void update_queries() {
