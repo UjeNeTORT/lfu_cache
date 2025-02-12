@@ -22,7 +22,7 @@ cmake .. -G Makefile -DCMAKE_BUILD_TYPE=Release
 ```
 
 ```bash
-ninja
+make
 ```
 
 3. test cache
