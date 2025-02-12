@@ -26,31 +26,31 @@ class LFU_cache {
   size_t size_ = 0;
   size_t capacity_ = DefaultCapacity;
 
-  std::unordered_map<KeyT, ValNodeIt> map_;
+  std::unordered_map<KeyT, ValNodeIt> cache_;
   std::list<FrqNode> frq_nodes_;
 
   DataAccessFunc AccessData_;
 
 public:
-  LFU_cache() : map_(capacity_), frq_nodes_(capacity_) {}
+  LFU_cache() : cache_(capacity_), frq_nodes_(capacity_) {}
 
   explicit
   LFU_cache(size_t capacity, DataAccessFunc AccessData) :
-    capacity_(capacity), map_(capacity), AccessData_(AccessData) {}
+    capacity_(capacity), cache_(capacity), AccessData_(AccessData) {}
 
   const T &get(const KeyT &key) {
-    auto map_it = map_.find(key);
+    auto cache_it = cache_.find(key);
 
-    if (map_it == map_.end())
-      map_it = add(key);
+    if (cache_it == cache_.end())
+      cache_it = add(key);
     else
       hits_++;
 
-    ValNodeIt val = inc_freq(map_it->second);
+    ValNodeIt val = inc_freq(cache_it->second);
     // inc_freq makes map_it invalid
-    map_it = map_.find(val->key());
+    cache_it = cache_.find(val->key());
 
-    return map_it->second->data();
+    return cache_it->second->data();
   }
 
   auto add(const KeyT &key) {
@@ -58,9 +58,9 @@ public:
   }
 
   size_t freq(const KeyT &key) const {
-    auto map_it = map_.find(key);
-    if (map_it == map_.end()) return 0;
-    return map_it->second->freq();
+    auto cache_it = cache_.find(key);
+    if (cache_it == cache_.end()) return 0;
+    return cache_it->second->freq();
   }
 
   size_t hits() const { return hits_; }
@@ -74,7 +74,7 @@ public:
     out << "capacity_ = " << capacity_ << '\n';
 
     out << "MAP:\n";
-    for (auto el : map_)
+    for (auto el : cache_)
       out << '\t' << el.first << " -> " << el.second->data() << '\n';
 
     out << "FREQ NODES:\n";
@@ -84,8 +84,8 @@ public:
 
 protected:
   auto add(const KeyT &key, const T &data) {
-    auto map_it = map_.find(key);
-    if (map_it != map_.end()) return map_it;
+    auto cache_it = cache_.find(key);
+    if (cache_it != cache_.end()) return cache_it;
 
     if (size_ == capacity_) displace();
 
@@ -98,10 +98,10 @@ protected:
 
     ValNodeIt val = first_frq->add_val(ValNode{data, key, first_frq});
 
-    map_it = map_.emplace(key, val).first;
+    cache_it = cache_.emplace(key, val).first;
     size_++;
 
-    return map_it;
+    return cache_it;
   }
 
 private:
@@ -117,9 +117,9 @@ private:
     frq->rm_val(val);
     if (frq->empty()) frq_nodes_.erase(frq);
 
-    // upd map_
-    map_.erase(new_val->key());
-    map_.emplace(new_val->key(), new_val);
+    // upd cache_
+    cache_.erase(new_val->key());
+    cache_.emplace(new_val->key(), new_val);
     return new_val;
   }
 
@@ -130,7 +130,7 @@ private:
     }
 
     const KeyT &displaced_key = frq_nodes_.front().displace();
-    map_.erase(displaced_key);
+    cache_.erase(displaced_key);
     size_--;
   }
 
@@ -209,24 +209,24 @@ class Belady_cache {
 
   size_t curr_n_query_ = 0;
 
-  // "cached" values (todo rename)
-  std::unordered_map<KeyT, T> map_;
+  // "cached" values
+  std::unordered_map<KeyT, T> cache_;
 
   DataAccessFunc AccessData_;
 
 public:
-  Belady_cache() : query_(), map_(capacity_) {};
+  Belady_cache() : query_(), cache_(capacity_) {};
   explicit
   Belady_cache(size_t capacity, std::list<KeyT> query, DataAccessFunc AccessData) :
-    capacity_(capacity), query_(query), map_(capacity), AccessData_(AccessData) {
+    capacity_(capacity), query_(query), cache_(capacity), AccessData_(AccessData) {
 
     int n_query = 0;
     for (auto const &q : query_) {
-      auto map_it = next_query_.find(q);
-      if (map_it == next_query_.end())
-        map_it = next_query_.emplace(q, std::list<int>{}).first;
+      auto cache_it = next_query_.find(q);
+      if (cache_it == next_query_.end())
+        cache_it = next_query_.emplace(q, std::list<int>{}).first;
 
-      map_it->second.push_back(n_query);
+      cache_it->second.push_back(n_query);
       n_query++;
     }
   }
@@ -243,9 +243,9 @@ private:
 
     // dump(std::cerr);
 
-    auto map_it = map_.find(key);
-    if (map_it == map_.end()) {
-      map_it = add(key);
+    auto cache_it = cache_.find(key);
+    if (cache_it == cache_.end()) {
+      cache_it = add(key);
     }
     else {
       hits_++;
@@ -253,30 +253,30 @@ private:
 
     update_queries();
 
-    return map_it->second;
+    return cache_it->second;
   }
 
   auto add(const KeyT &key) {
-    auto map_it = map_.find(key);
-    if (map_it != map_.end()) return map_it;
+    auto cache_it = cache_.find(key);
+    if (cache_it != cache_.end()) return cache_it;
 
     if (size_ == capacity_) displace();
 
-    map_it = map_.emplace(key, AccessData_(key)).first;
+    cache_it = cache_.emplace(key, AccessData_(key)).first;
     size_++;
 
-    return map_it;
+    return cache_it;
   }
 
   void displace() {
-    KeyT displace_candidate = map_.begin()->first;
+    KeyT displace_candidate = cache_.begin()->first;
 
     // former displace_choose()
-    auto curr_max = map_.begin();
+    auto curr_max = cache_.begin();
     auto curr_next_query = next_query_.begin();
     auto curr_next_max = next_query_.find(curr_max->first);
 
-    for (auto cache_it = map_.begin(), cache_end = map_.end();
+    for (auto cache_it = cache_.begin(), cache_end = cache_.end();
                                             cache_it != cache_end; ++cache_it) {
       curr_next_query = next_query_.find(cache_it->first);
 
@@ -295,7 +295,7 @@ private:
 
     displace_candidate = curr_max->first;
 
-    map_.erase(displace_candidate);
+    cache_.erase(displace_candidate);
     size_--;
   }
 
@@ -313,15 +313,15 @@ public:
     out << "size/capacity: " << size_ << "/" << capacity_ << '\n';
     out << "hits = " << hits_ << '\n';
     out << "cache: ";
-    for (auto &p: map_) out << p.first << " ";
+    for (auto &p: cache_) out << p.first << " ";
     out << '\n';
     out << "queue: ";
     for (auto &q : query_) out << q << " ";
     out << '\n';
     out << "next_query:\n";
-    for (auto map_it = next_query_.begin(); map_it != next_query_.end(); ++map_it) {
-      out << '\t' << map_it->first << ": ";
-      for (auto &q_delta : map_it->second) out << q_delta << ' ';
+    for (auto cache_it = next_query_.begin(); cache_it != next_query_.end(); ++cache_it) {
+      out << '\t' << cache_it->first << ": ";
+      for (auto &q_delta : cache_it->second) out << q_delta << ' ';
       out << '\n';
     }
     out << "============================================\n";
