@@ -13,7 +13,7 @@ namespace caches {
 constexpr size_t DefaultCapacity = 0;
 
 template <typename KeyT, typename T>
-class LFU_cache {
+class LFU {
 
   class FrqNode;
   class ValNode;
@@ -32,10 +32,10 @@ class LFU_cache {
   DataAccessFunc AccessData_;
 
 public:
-  LFU_cache() : cache_(capacity_), frq_nodes_(capacity_) {}
+  LFU() : cache_(capacity_), frq_nodes_(capacity_) {}
 
   explicit
-  LFU_cache(size_t capacity, DataAccessFunc AccessData) :
+  LFU(size_t capacity, DataAccessFunc AccessData) :
     capacity_(capacity), cache_(capacity), AccessData_(AccessData) {}
 
   const T &get(const KeyT &key) {
@@ -190,7 +190,7 @@ private:
 };
 
 template <typename KeyT, typename T>
-class Belady_cache {
+class Belady {
   using DataAccessFunc = T (*)(const KeyT &);
 
   size_t hits_ = 0;
@@ -215,9 +215,9 @@ class Belady_cache {
   DataAccessFunc AccessData_;
 
 public:
-  Belady_cache() : query_(), cache_(capacity_) {};
+  Belady() : query_(), cache_(capacity_) {};
   explicit
-  Belady_cache(size_t capacity, std::list<KeyT> query, DataAccessFunc AccessData) :
+  Belady(size_t capacity, std::list<KeyT> query, DataAccessFunc AccessData) :
     capacity_(capacity), query_(query), cache_(capacity), AccessData_(AccessData) {
 
     int n_query = 0;
@@ -238,11 +238,6 @@ public:
 
 private:
   const T &get(const KeyT &key) {
-    // if (key != query_.front())
-      // std::cerr << "Expected and received key mismatch\n";
-
-    // dump(std::cerr);
-
     auto cache_it = cache_.find(key);
     if (cache_it == cache_.end()) {
       cache_it = add(key);
@@ -337,5 +332,17 @@ public:
 };
 
 } // namespace caches
+
+template <typename KeyT, typename T>
+std::ostream& operator<<(std::ostream& out, const caches::LFU<KeyT, T>& lfu) {
+  lfu.dump(out);
+  return out;
+}
+
+template <typename KeyT, typename T>
+std::ostream& operator<<(std::ostream& out, const caches::Belady<KeyT, T>& belady) {
+  belady.dump(out);
+  return out;
+}
 
 #endif // CACHE_HPP

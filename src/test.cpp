@@ -17,10 +17,10 @@ protected:
   size_t capacity_ = 0;
   size_t n_queries_ = 0;
   size_t answer_ = 0;
-  caches::LFU_cache<int, int> *lfu_;
+  caches::LFU<int, int> *lfu_;
 
   virtual void SetUp() {
-    lfu_ = new caches::LFU_cache<int, int>;
+    lfu_ = new caches::LFU<int, int>;
   }
 
   virtual void TearDown() {
@@ -38,7 +38,7 @@ protected:
     testfile >> capacity_ >> n_queries_ >> answer_;
 
     int curr_key = 0;
-    *lfu_ = caches::LFU_cache<int, int> {capacity_, SlowGetPage};
+    *lfu_ = caches::LFU<int, int> {capacity_, SlowGetPage};
     for (size_t i = 0; i < n_queries_; i++) {
       testfile >> curr_key;
       lfu_->get(curr_key);
@@ -61,10 +61,10 @@ protected:
   size_t capacity_ = 0;
   size_t n_queries_ = 0;
   size_t answer_ = 0;
-  caches::Belady_cache<int, int> *beladka_;
+  caches::Belady<int, int> *beladka_;
 
   virtual void SetUp() {
-    beladka_ = new caches::Belady_cache<int, int>;
+    beladka_ = new caches::Belady<int, int>;
   }
 
   virtual void TearDown() {
@@ -88,7 +88,7 @@ protected:
       queries.push_back(curr_key);
     }
 
-    *beladka_ = caches::Belady_cache<int, int> {capacity_, queries, SlowGetPage};
+    *beladka_ = caches::Belady<int, int> {capacity_, queries, SlowGetPage};
     beladka_->run();
   }
 
@@ -157,7 +157,7 @@ TEST(CompareCaches, lfu_less_hits_than_ideal) {
     if (testfile.is_open())
       testfile >> capacity >> n_queries >> answer_not_used;
 
-    caches::LFU_cache<int, int> lfu {capacity, SlowGetPage};
+    caches::LFU<int, int> lfu {capacity, SlowGetPage};
 
     std::list<int> queries {};
     for (int i = 0; i < n_queries; i++) {
@@ -166,10 +166,10 @@ TEST(CompareCaches, lfu_less_hits_than_ideal) {
       lfu.get(key);
     }
 
-    caches::Belady_cache<int, int> beladka {capacity, queries, SlowGetPage};
-    beladka.run();
+    caches::Belady<int, int> belady {capacity, queries, SlowGetPage};
+    belady.run();
 
-    ASSERT_LE(lfu.hits(), beladka.hits());
+    ASSERT_LE(lfu.hits(), belady.hits());
   }
 
 }

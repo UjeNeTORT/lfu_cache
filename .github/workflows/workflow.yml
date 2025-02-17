@@ -5,10 +5,12 @@ on:
     branches:
     - main
     - add-workflows
+    - dev
   pull_request:
     branches:
     - main
     - add-workflows
+    - dev
 
 jobs:
   test_caches:
