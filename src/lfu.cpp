@@ -14,15 +14,15 @@ int main() {
   std::cin >> n_queries;
 
   int curr = 0;
-  caches::LFU_cache<int, int> cache {lfu_capacity, SlowGetPage};
+  caches::LFU<int, int> lfu {lfu_capacity, SlowGetPage};
   for (size_t i = 0; i < n_queries; i++) {
     std::cin >> curr;
-    cache.get(curr);
+    lfu.get(curr);
   }
 
-  std::cout << cache.hits() << '\n';
+  std::cout << lfu.hits() << '\n';
 
-  // std::cout << cache << '\n';
+  // std::cout << lfu << '\n';
 
   return 0;
 }

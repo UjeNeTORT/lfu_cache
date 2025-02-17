@@ -21,7 +21,7 @@ int main() {
     queries.push_back(curr);
   }
 
-  caches::Belady_cache<int, int> belady {belady_capacity, queries, SlowGetPage};
+  caches::Belady<int, int> belady {belady_capacity, queries, SlowGetPage};
   belady.run();
   std::cout << belady.hits() << '\n';
 
