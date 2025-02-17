@@ -338,4 +338,16 @@ public:
 
 } // namespace caches
 
+template <typename KeyT, typename T>
+std::ostream& operator<<(std::ostream& out, const caches::LFU_cache<KeyT, T>& lfu) {
+  lfu.dump(out);
+  return out;
+}
+
+template <typename KeyT, typename T>
+std::ostream& operator<<(std::ostream& out, const caches::Belady_cache<KeyT, T>& belady) {
+  belady.dump(out);
+  return out;
+}
+
 #endif // CACHE_HPP
