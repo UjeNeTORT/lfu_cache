@@ -13,8 +13,11 @@ set (CMAKE_CXX_FLAGS_RELEASE "-O2")
 
 add_executable(testgen src/testgen.cpp)
 
-add_executable(cache src/main.cpp)
-target_include_directories(cache PRIVATE include/)
+add_executable(lfu src/lfu.cpp)
+target_include_directories(lfu PRIVATE include/)
+
+add_executable(belady src/belady.cpp)
+target_include_directories(belady PRIVATE include/)
 
 find_library(GTEST_LIBRARY NAMES gtest gtest_main)
 
