@@ -18,11 +18,11 @@ mkdir build && cd build
 ```
 
 ```bash
-cmake .. -G Makefile -DCMAKE_BUILD_TYPE=Release
+cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
 ```
 
 ```bash
-make
+ninja
 ```
 
 3. test cache
