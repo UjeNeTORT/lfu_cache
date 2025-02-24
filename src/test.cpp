@@ -61,14 +61,14 @@ protected:
   size_t capacity_ = 0;
   size_t n_queries_ = 0;
   size_t answer_ = 0;
-  caches::Belady<int, int> *beladka_;
+  caches::Belady<int, int> *belady_;
 
   virtual void SetUp() {
-    beladka_ = new caches::Belady<int, int>;
+    belady_ = new caches::Belady<int, int>;
   }
 
   virtual void TearDown() {
-    delete beladka_;
+    delete belady_;
   }
 
   void RunTest(std::filesystem::path testf_path) {
@@ -88,13 +88,13 @@ protected:
       queries.push_back(curr_key);
     }
 
-    *beladka_ = caches::Belady<int, int> {capacity_, queries, SlowGetPage};
-    beladka_->run();
+    *belady_ = caches::Belady<int, int> {capacity_, queries, SlowGetPage};
+    belady_->run();
   }
 
   void TestHits(std::filesystem::path testf_path) {
     RunTest(testf_path);
-    ASSERT_EQ(beladka_->hits(), answer_);
+    ASSERT_EQ(belady_->hits(), answer_);
   }
 };
 

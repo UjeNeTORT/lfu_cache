@@ -211,6 +211,10 @@ class Belady {
 
   // "cached" values
   std::unordered_map<KeyT, T> cache_;
+  // storage for a "not to be accessed again" page
+  // no need to add this value to the cache to avoid unnecessary displacement
+  // const T & of value stored here is returned
+  std::pair<KeyT, T> one_time_storage_;
 
   DataAccessFunc AccessData_;
 
@@ -240,6 +244,13 @@ private:
   const T &get(const KeyT &key) {
     auto cache_it = cache_.find(key);
     if (cache_it == cache_.end()) {
+      // do not store value which will never be accessed again
+      if (next_query_.find(key)->second.size() == 1) {
+        one_time_storage_ = std::pair<KeyT, T>{key, AccessData_(key)};
+        update_queries();
+        return one_time_storage_.second;
+      }
+
       cache_it = add(key);
     }
     else {
