@@ -32,7 +32,7 @@ jobs:
     
     - name: run podman container 
       run: |
-        podman run --mount type=bind,src=./, dst=/root/app lfu_cache:latest
+        podman run --mount type=bind,src=./, dst=/root/app localhost/lfu_cache:latest
         cd build 
       shell: bash
     
