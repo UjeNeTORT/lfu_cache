@@ -37,6 +37,7 @@
 # build folder
 build/
 buildd/
+build_sh/
 build_release/
 
 
