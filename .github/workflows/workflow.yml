@@ -15,37 +15,15 @@ on:
 jobs:
   test_caches:
     runs-on: ubuntu-22.04
+    container: ujenetort/lfu_cache:latest
     steps:
-
-    - name: install-dependencies
-      run: |
-        sudo apt update
-        sudo apt install cmake ninja-build build-essential libgtest-dev podman
-      shell: bash
 
     - name: checkout
       uses: actions/checkout@v4
     
-    - name: build podman container 
-      run: |
-        podman build . -t lfu_cache:latest
-    
-    - name: run podman container 
-      run: |
-        podman run --mount type=bind,src=./, dst=/root/app localhost/lfu_cache:latest
-        cd build 
+    - name: cd build
+      run: mkdir build && cd build
       shell: bash
-    
-#   - name: configure
-#     run: |
-#       mkdir -p build && cd build
-#       cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
-#     shell: bash
-
-#   - name: build
-#     run:  ninja
-#     working-directory: build
-#     shell: bash
 
     - name: test_lfu_hits
       run: ./test --gtest_filter=TestLFU.hits
