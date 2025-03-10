@@ -15,16 +15,17 @@ on:
 jobs:
   test_caches:
     runs-on: ubuntu-22.04
-    container: ujenetort/lfu_cache:latest
+    container: 
+      image: docker.io/ujenetort/lfu_cache:latest
     steps:
 
     - name: checkout
       uses: actions/checkout@v4
     
-    - name: cd build
-      run: mkdir build && cd build
+    - name: build
+      run: ./build.sh
       shell: bash
-
+    
     - name: test_lfu_hits
       run: ./test --gtest_filter=TestLFU.hits
       working-directory: build
