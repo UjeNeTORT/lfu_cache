@@ -31,22 +31,22 @@ jobs:
     
     - name: test_lfu_hits
       run: ./test --gtest_filter=TestLFU.hits
-      working_directory: build_sh
+      working-directory: build_sh
       shell: bash
 
     - name: test_lfu_stress
       run: ./test --gtest_filter=TestLFU.stress
-      working_directory: build_sh
+      working-directory: build_sh
       shell: bash
 
     - name: test_belady_hits
       run: ./test --gtest_filter=TestBelady.hits
-      working_directory: build_sh
+      working-directory: build_sh
       shell: bash
 
     - name: test_belady_stress
       run: ./test --gtest_filter=TestBelady.stress
-      working_directory: build_sh
+      working-directory: build_sh
       shell: bash
 
     - name: test_compare
