@@ -31,17 +31,14 @@ jobs:
     
     - name: test_lfu_hits
       run: ./test --gtest_filter=TestLFU.hits
-      working-directory: build
       shell: bash
 
     - name: test_lfu_stress
       run: ./test --gtest_filter=TestLFU.stress
-      working-directory: build
       shell: bash
 
     - name: test_belady_hits
       run: ./test --gtest_filter=TestBelady.hits
-      working-directory: build
       shell: bash
 
     - name: test_belady_stress
